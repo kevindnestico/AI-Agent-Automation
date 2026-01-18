@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+ENV/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PyCharm / JetBrains
+.idea/
+*.iml
+*.iws
+
+# Playwright
+playwright/.cache/
+test-results/
+screenshots/
+traces/
+
+# macOS
+.DS_Store
