@@ -3,6 +3,7 @@ Network-level checks: console/HTTP errors, resilience and hosting behavior.
 """
 
 import re
+from urllib.parse import urlparse
 
 import allure
 import pytest
@@ -24,18 +25,38 @@ def complete_purchase_through_ui(page: Page) -> None:
 
 
 @pytest.mark.regression
-def test_no_console_or_http_errors_during_purchase(page: Page):
+def test_no_console_or_http_errors_during_purchase(page: Page, base_url: str):
+    """The shop itself must not produce errors during a purchase.
+
+    Third-party calls (e.g. Saucedemo's telemetry to events.backtrace.io, which
+    answers 401 on CI runners) are outside the app under test: they are
+    reported in Allure for visibility but do not fail the test.
+    """
+    app_host = urlparse(base_url).hostname
     problems: list[str] = []
-    page.on("console", lambda msg: problems.append(f"console.{msg.type}: {msg.text}") if msg.type == "error" else None)
+    third_party: list[str] = []
+
+    def record(url: str | None, message: str) -> None:
+        is_first_party = not url or urlparse(url).hostname == app_host
+        (problems if is_first_party else third_party).append(message)
+
+    page.on(
+        "console",
+        lambda msg: record(msg.location.get("url"), f"console.{msg.type}: {msg.text}") if msg.type == "error" else None,
+    )
     page.on("pageerror", lambda error: problems.append(f"uncaught: {error}"))
-    page.on("requestfailed", lambda request: problems.append(f"failed: {request.url}"))
+    page.on("requestfailed", lambda request: record(request.url, f"failed: {request.url}"))
     page.on(
         "response",
-        lambda response: problems.append(f"HTTP {response.status}: {response.url}") if response.status >= 400 else None,
+        lambda response: (
+            record(response.url, f"HTTP {response.status}: {response.url}") if response.status >= 400 else None
+        ),
     )
 
     complete_purchase_through_ui(page)
 
+    if third_party:
+        allure.attach("\n".join(third_party), name="third-party-errors", attachment_type=allure.attachment_type.TEXT)
     assert not problems, "Errors during purchase flow:\n" + "\n".join(problems)
 
 

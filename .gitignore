@@ -33,3 +33,6 @@ test-results/
 
 # Local config
 .env
+
+# macOS Finder/iCloud duplicate copies ("file 2.py")
+* [2-9].*
