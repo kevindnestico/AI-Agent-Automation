@@ -1,10 +1,11 @@
 """
 End-to-end purchase flows for Saucedemo, driven entirely through the UI.
 """
+
 import allure
 import pytest
 
-from data.customers import Customer, DEFAULT_CUSTOMER
+from data.customers import DEFAULT_CUSTOMER, Customer
 from data.products import ALL_PRODUCTS, BACKPACK, BIKE_LIGHT, BOLT_T_SHIRT, FLEECE_JACKET, ONESIE, SortOption
 from pages import InventoryPage
 

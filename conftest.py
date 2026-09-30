@@ -11,6 +11,7 @@ Authentication is performed through the UI only once per user and worker; the
 resulting cookies are saved with ``storage_state`` and injected into every new
 browser context, so tests start already logged in.
 """
+
 import json
 import time
 from collections.abc import Callable

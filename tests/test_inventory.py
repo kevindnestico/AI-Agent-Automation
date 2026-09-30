@@ -1,6 +1,7 @@
 """
 Inventory (products page) tests for Saucedemo.
 """
+
 import allure
 import pytest
 
@@ -60,7 +61,7 @@ def test_inventory_matches_catalog(inventory_page: InventoryPage):
     names = inventory_page.get_product_names()
     prices = inventory_page.get_product_prices()
 
-    assert dict(zip(names, prices)) == {p.name: p.price for p in ALL_PRODUCTS}
+    assert dict(zip(names, prices, strict=True)) == {p.name: p.price for p in ALL_PRODUCTS}
 
 
 @pytest.mark.regression

@@ -1,6 +1,7 @@
 """
 Shopping cart functionality tests for Saucedemo.
 """
+
 import allure
 import pytest
 

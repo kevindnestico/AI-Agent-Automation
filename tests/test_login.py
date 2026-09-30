@@ -1,6 +1,7 @@
 """
 Login functionality tests for Saucedemo.
 """
+
 import allure
 import pytest
 

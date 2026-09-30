@@ -1,4 +1,5 @@
 """Saucedemo user accounts."""
+
 from enum import StrEnum
 
 

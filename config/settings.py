@@ -5,6 +5,7 @@ Values are read from environment variables (or a local ``.env`` file) so the
 same suite can run against different environments without code changes.
 The base URL is handled by pytest-base-url (``--base-url`` / ``base_url`` in pytest.ini).
 """
+
 import os
 from dataclasses import dataclass
 

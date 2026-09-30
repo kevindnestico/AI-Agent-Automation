@@ -1,6 +1,7 @@
 """
 Checkout happy path tests for Saucedemo.
 """
+
 import allure
 import pytest
 

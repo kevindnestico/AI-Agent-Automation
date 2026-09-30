@@ -1,6 +1,7 @@
 """
 Header component shared by every authenticated page (cart icon + burger menu).
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

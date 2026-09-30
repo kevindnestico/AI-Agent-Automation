@@ -1,6 +1,7 @@
 """
 Checkout Overview Page Object Model for Saucedemo.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

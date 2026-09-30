@@ -1,6 +1,7 @@
 """
 Base Page class with common functionality for all page objects.
 """
+
 import re
 from typing import Self
 

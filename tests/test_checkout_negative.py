@@ -1,6 +1,7 @@
 """
 Checkout negative and edge-case tests for Saucedemo.
 """
+
 import allure
 import pytest
 

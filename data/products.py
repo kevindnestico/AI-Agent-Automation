@@ -1,4 +1,5 @@
 """Saucedemo product catalog used as the source of truth for assertions."""
+
 from dataclasses import dataclass
 from enum import StrEnum
 

@@ -1,6 +1,7 @@
 """
 Page Object Model package for Saucedemo automation.
 """
+
 from pages.base_page import BasePage
 from pages.cart_page import CartPage
 from pages.checkout_complete_page import CheckoutCompletePage

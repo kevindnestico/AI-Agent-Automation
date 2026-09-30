@@ -1,4 +1,5 @@
 """Customer data for the checkout form."""
+
 from dataclasses import dataclass
 
 

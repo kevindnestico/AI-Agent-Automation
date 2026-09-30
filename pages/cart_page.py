@@ -1,6 +1,7 @@
 """
 Cart Page Object Model for Saucedemo.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
