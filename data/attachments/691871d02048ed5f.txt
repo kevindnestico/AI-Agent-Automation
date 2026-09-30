@@ -1,0 +1,1 @@
+WARNING  ai.failure_analyzer:failure_analyzer.py:109 AI analysis disabled: No valid Anthropic credentials (set ANTHROPIC_API_KEY)

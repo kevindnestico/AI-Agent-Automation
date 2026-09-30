@@ -1,0 +1,16 @@
+launch_status failed=3 1790800757000000000
+launch_status broken=3 1790800757000000000
+launch_status passed=361 1790800757000000000
+launch_status skipped=54 1790800757000000000
+launch_status unknown=0 1790800757000000000
+launch_time duration=206973 1790800757000000000
+launch_time min_duration=0 1790800757000000000
+launch_time max_duration=21869 1790800757000000000
+launch_time sum_duration=462660 1790800757000000000
+launch_time start=1790800505688 1790800757000000000
+launch_time stop=1790800712661 1790800757000000000
+launch_problems known_saucedemo_bugs_(expected_failures)=54 1790800757000000000
+launch_problems assertion_failures_(product_defects)=3 1790800757000000000
+launch_problems timeouts=3 1790800757000000000
+launch_retries retries=20 1790800757000000000
+launch_retries run=421 1790800757000000000

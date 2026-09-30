@@ -1,0 +1,1 @@
+WARNING  ai.failure_analyzer:failure_analyzer.py:126 AI analysis declined for tests/test_cart.py::test_x

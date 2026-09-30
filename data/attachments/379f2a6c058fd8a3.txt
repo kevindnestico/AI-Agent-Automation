@@ -1,0 +1,1 @@
+INFO     ai.failure_analyzer:failure_analyzer.py:128 AI analysis for tests/test_cart.py::test_x: 1200 input (900 cached), 300 output tokens
