@@ -1,0 +1,19 @@
+[project]
+name = "saucedemo-automation"
+version = "2.0.0"
+description = "E2E test automation for Saucedemo with Playwright, pytest, Page Object Model and Claude-powered failure analysis"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "PT", "RUF"]
+ignore = [
+    "PT011",   # pytest.raises too broad
+    "RUF001",  # ambiguous unicode in strings (test data uses accents on purpose)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ai", "config", "data", "pages"]

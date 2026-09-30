@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Known Saucedemo bugs (expected failures)",
+    "matchedStatuses": ["skipped"],
+    "messageRegex": ".*XFAIL.*|.*Known bug.*"
+  },
+  {
+    "name": "Timeouts",
+    "matchedStatuses": ["broken", "failed"],
+    "messageRegex": ".*(Timeout|timed out).*"
+  },
+  {
+    "name": "Element not found / locator issues",
+    "matchedStatuses": ["broken", "failed"],
+    "messageRegex": ".*(element\\(s\\) not found|strict mode violation|waiting for locator).*"
+  },
+  {
+    "name": "Assertion failures (product defects)",
+    "matchedStatuses": ["failed"],
+    "messageRegex": ".*AssertionError.*"
+  },
+  {
+    "name": "Test infrastructure errors",
+    "matchedStatuses": ["broken"]
+  }
+]

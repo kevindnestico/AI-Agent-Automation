@@ -1,0 +1,11 @@
+[
+  {"id": "invalid-username", "username": "invalid_user", "password": "secret_sauce", "error": "INVALID_CREDENTIALS"},
+  {"id": "invalid-password", "username": "standard_user", "password": "wrong_password", "error": "INVALID_CREDENTIALS"},
+  {"id": "empty-username", "username": "", "password": "secret_sauce", "error": "USERNAME_REQUIRED"},
+  {"id": "empty-password", "username": "standard_user", "password": "", "error": "PASSWORD_REQUIRED"},
+  {"id": "both-empty", "username": "", "password": "", "error": "USERNAME_REQUIRED"},
+  {"id": "locked-out-user", "username": "locked_out_user", "password": "secret_sauce", "error": "LOCKED_OUT"},
+  {"id": "username-case-sensitive", "username": "STANDARD_USER", "password": "secret_sauce", "error": "INVALID_CREDENTIALS"},
+  {"id": "sql-injection", "username": "' OR '1'='1", "password": "' OR '1'='1", "error": "INVALID_CREDENTIALS"},
+  {"id": "whitespace-padded", "username": " standard_user ", "password": "secret_sauce", "error": "INVALID_CREDENTIALS"}
+]

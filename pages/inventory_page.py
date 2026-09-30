@@ -1,119 +1,82 @@
 """
 Inventory Page Object Model for Saucedemo.
 """
-from typing import List
-from playwright.sync_api import Page, Locator, expect
-from pages.base_page import BasePage
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Self
+
+import allure
+from playwright.sync_api import Locator, Page, expect
+
+from data.products import Product, SortOption
+from pages.base_page import BasePage, parse_price
+
+if TYPE_CHECKING:
+    from pages.cart_page import CartPage
+    from pages.product_detail_page import ProductDetailPage
 
 
 class InventoryPage(BasePage):
     """Page object for the Saucedemo inventory/products page."""
-    
+
+    PATH = "/inventory.html"
+    TITLE = "Products"
+
     def __init__(self, page: Page):
-        """
-        Initialize the inventory page.
-        
-        Args:
-            page: Playwright page instance
-        """
         super().__init__(page)
-        self._page_title: Locator = page.locator(".title")
-        self._cart_badge: Locator = page.locator(".shopping_cart_badge")
-        self._cart_link: Locator = page.locator(".shopping_cart_link")
-        self._inventory_items: Locator = page.locator(".inventory_item")
-    
-    def verify_inventory_page_loaded(self) -> None:
-        """Verify that the inventory page has loaded successfully."""
-        expect(self._page_title).to_be_visible()
-        expect(self._page_title).to_have_text("Products")
-        self.wait_for_url(f"{self.base_url}/inventory.html")
-    
-    def add_to_cart_by_name(self, product_name: str) -> None:
-        """
-        Add a product to cart by its name.
-        
-        Args:
-            product_name: Name of the product to add to cart
-        """
-        # Find the inventory item containing the product name
-        item = self.page.locator(".inventory_item").filter(
-            has=self.page.get_by_text(product_name, exact=True)
-        )
-        
-        # Click the "Add to cart" button for this item
-        add_button = item.get_by_role("button", name="Add to cart")
-        expect(add_button).to_be_visible()
-        add_button.click()
-        
-        # Verify button text changed to "Remove"
-        remove_button = item.get_by_role("button", name="Remove")
-        expect(remove_button).to_be_visible()
-    
-    def remove_from_cart_by_name(self, product_name: str) -> None:
-        """
-        Remove a product from cart by its name.
-        
-        Args:
-            product_name: Name of the product to remove from cart
-        """
-        item = self.page.locator(".inventory_item").filter(
-            has=self.page.get_by_text(product_name, exact=True)
-        )
-        
-        remove_button = item.get_by_role("button", name="Remove")
-        expect(remove_button).to_be_visible()
-        remove_button.click()
-    
-    def go_to_cart(self) -> None:
-        """Navigate to the shopping cart page."""
-        self._cart_link.click()
-        self.wait_for_url(f"{self.base_url}/cart.html")
-    
-    def get_cart_count(self) -> int:
-        """
-        Get the number of items in the cart badge.
-        
-        Returns:
-            int: Number of items in cart, 0 if badge not visible
-        """
-        if self._cart_badge.is_visible():
-            return int(self._cart_badge.inner_text())
-        return 0
-    
-    def get_product_prices(self) -> List[float]:
-        """
-        Get all product prices on the inventory page.
-        
-        Returns:
-            List[float]: List of product prices
-        """
-        price_elements = self.page.locator(".inventory_item_price").all()
-        prices = []
-        
-        for price_element in price_elements:
-            price_text = price_element.inner_text()
-            # Remove dollar sign and convert to float
-            price = float(price_text.replace("$", ""))
-            prices.append(price)
-        
-        return prices
-    
-    def get_product_names(self) -> List[str]:
-        """
-        Get all product names on the inventory page.
-        
-        Returns:
-            List[str]: List of product names
-        """
-        name_elements = self.page.locator(".inventory_item_name").all()
-        return [name.inner_text() for name in name_elements]
-    
-    def sort_products(self, sort_option: str) -> None:
-        """
-        Sort products by the given option.
-        
-        Args:
-            sort_option: Sort option text (e.g., "Price (low to high)")
-        """
-        sort_dropdown = self.page.locator(".product_sort_container")
-        sort_dropdown.select_option(label=sort_option)
+        self.inventory_list: Locator = page.get_by_test_id("inventory-list")
+        self.items: Locator = page.get_by_test_id("inventory-item")
+        self.item_names: Locator = page.get_by_test_id("inventory-item-name")
+        self.item_prices: Locator = page.get_by_test_id("inventory-item-price")
+        self.item_images: Locator = page.locator("img.inventory_item_img")
+        self.sort_select: Locator = page.get_by_test_id("product-sort-container")
+
+    def add_to_cart_button(self, product: Product) -> Locator:
+        return self.page.get_by_test_id(f"add-to-cart-{product.slug}")
+
+    def remove_button(self, product: Product) -> Locator:
+        return self.page.get_by_test_id(f"remove-{product.slug}")
+
+    @allure.step("Add {product} to cart")
+    def add_to_cart(self, product: Product) -> Self:
+        """Add a product and verify its button toggles to "Remove"."""
+        self.add_to_cart_button(product).click()
+        expect(self.remove_button(product)).to_be_visible()
+        return self
+
+    def add_products(self, *products: Product) -> Self:
+        for product in products:
+            self.add_to_cart(product)
+        return self
+
+    @allure.step("Remove {product} from cart")
+    def remove_from_cart(self, product: Product) -> Self:
+        """Remove a product and verify its button toggles back to "Add to cart"."""
+        self.remove_button(product).click()
+        expect(self.add_to_cart_button(product)).to_be_visible()
+        return self
+
+    def sort_by(self, option: SortOption) -> Self:
+        with allure.step(f"Sort products by {option.name}"):
+            self.sort_select.select_option(option.value)
+        return self
+
+    @allure.step("Open product {product}")
+    def open_product(self, product: Product) -> ProductDetailPage:
+        from pages.product_detail_page import ProductDetailPage
+
+        self.item_names.filter(has_text=product.name).click()
+        return ProductDetailPage(self.page).should_be_loaded()
+
+    def go_to_cart(self) -> CartPage:
+        return self.header.open_cart()
+
+    def get_product_names(self) -> list[str]:
+        return self.item_names.all_inner_texts()
+
+    def get_product_prices(self) -> list[float]:
+        return [parse_price(text) for text in self.item_prices.all_inner_texts()]
+
+    def get_image_sources(self) -> list[str]:
+        return self.item_images.evaluate_all("imgs => imgs.map(img => img.getAttribute('src'))")

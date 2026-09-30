@@ -25,3 +25,11 @@ traces/
 
 # macOS
 .DS_Store
+# Test reports
+allure-results/
+allure-report/
+test-results/
+.pytest_cache/
+
+# Local config
+.env

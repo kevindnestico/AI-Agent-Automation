@@ -1,0 +1,19 @@
+# Test runner & browser automation
+pytest==9.1.1
+pytest-playwright==0.9.0
+playwright==1.63.0
+pytest-xdist==3.8.0
+pytest-rerunfailures==16.7
+
+# Reporting
+allure-pytest==2.16.2
+
+# Accessibility
+axe-playwright-python==0.1.8
+
+# AI failure analysis (optional at runtime: only used with --ai-analysis)
+anthropic==1.9.0
+
+# Config
+python-dotenv==1.2.3
+Pillow==12.3.0
