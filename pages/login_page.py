@@ -1,63 +1,65 @@
 """
 Login Page Object Model for Saucedemo.
 """
-from playwright.sync_api import Page, Locator, expect
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Self
+
+import allure
+from playwright.sync_api import Locator, Page, expect
+
+from config import settings
+from data.users import User
 from pages.base_page import BasePage
+
+if TYPE_CHECKING:
+    from pages.inventory_page import InventoryPage
 
 
 class LoginPage(BasePage):
     """Page object for the Saucedemo login page."""
-    
+
+    PATH = "/"
+
     def __init__(self, page: Page):
-        """
-        Initialize the login page.
-        
-        Args:
-            page: Playwright page instance
-        """
         super().__init__(page)
-        self._username_input: Locator = page.get_by_placeholder("Username")
-        self._password_input: Locator = page.get_by_placeholder("Password")
-        self._login_button: Locator = page.get_by_role("button", name="Login")
-        self._error_message: Locator = page.locator("[data-test='error']")
-    
-    def navigate(self) -> None:
-        """Navigate to the login page."""
-        self.navigate_to("/")
-    
+        self.username_input: Locator = page.get_by_test_id("username")
+        self.password_input: Locator = page.get_by_test_id("password")
+        self.login_button: Locator = page.get_by_test_id("login-button")
+        self.error_message: Locator = page.get_by_test_id("error")
+
+    def should_be_loaded(self) -> Self:
+        super().should_be_loaded()
+        expect(self.login_button).to_be_visible()
+        return self
+
+    @allure.step("Submit login form as {username}")
     def login(self, username: str, password: str) -> None:
-        """
-        Perform login with given credentials.
-        
+        """Fill and submit the login form without asserting the outcome."""
+        self.username_input.fill(username)
+        self.password_input.fill(password)
+        self.login_button.click()
+
+    def login_as(self, user: User, timeout: float | None = None) -> InventoryPage:
+        """Log in with a valid account and return the loaded inventory page.
+
         Args:
-            username: Username to login with
-            password: Password to login with
+            user: Account to log in with.
+            timeout: Max time (ms) to wait for the inventory page. Defaults to a
+                longer timeout for ``performance_glitch_user``.
         """
-        self._username_input.fill(username)
-        self._password_input.fill(password)
-        self._login_button.click()
-    
+        from pages.inventory_page import InventoryPage
+
+        self.login(user, settings.password)
+        if timeout is None and user is User.PERFORMANCE_GLITCH:
+            timeout = settings.slow_login_timeout_ms
+        inventory = InventoryPage(self.page)
+        expect(inventory.inventory_list).to_be_visible(timeout=timeout)
+        return inventory.should_be_loaded()
+
     def get_error_message(self) -> str:
-        """
-        Get the error message displayed on login failure.
-        
-        Returns:
-            str: Error message text
-        """
-        expect(self._error_message).to_be_visible()
-        return self._error_message.inner_text()
-    
-    def is_error_displayed(self) -> bool:
-        """
-        Check if error message is displayed.
-        
-        Returns:
-            bool: True if error is visible, False otherwise
-        """
-        return self._error_message.is_visible()
-    
-    def verify_login_page_loaded(self) -> None:
-        """Verify that the login page has loaded successfully."""
-        expect(self._username_input).to_be_visible()
-        expect(self._password_input).to_be_visible()
-        expect(self._login_button).to_be_visible()
+        expect(self.error_message).to_be_visible()
+        return self.error_message.inner_text()
+
+    def should_show_error(self, message: str) -> None:
+        expect(self.error_message).to_have_text(message)

@@ -1,75 +1,70 @@
 """
 Checkout Information Page Object Model for Saucedemo.
 """
-from playwright.sync_api import Page, Locator, expect
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Self
+
+import allure
+from playwright.sync_api import Locator, Page, expect
+
+from data.customers import Customer
 from pages.base_page import BasePage
+
+if TYPE_CHECKING:
+    from pages.cart_page import CartPage
+    from pages.checkout_overview_page import CheckoutOverviewPage
 
 
 class CheckoutInfoPage(BasePage):
-    """Page object for the Saucedemo checkout information page."""
-    
+    """Page object for checkout step one (customer information)."""
+
+    PATH = "/checkout-step-one.html"
+    TITLE = "Checkout: Your Information"
+
     def __init__(self, page: Page):
-        """
-        Initialize the checkout info page.
-        
-        Args:
-            page: Playwright page instance
-        """
         super().__init__(page)
-        self._page_title: Locator = page.locator(".title")
-        self._first_name_input: Locator = page.get_by_placeholder("First Name")
-        self._last_name_input: Locator = page.get_by_placeholder("Last Name")
-        self._postal_code_input: Locator = page.get_by_placeholder("Zip/Postal Code")
-        self._continue_button: Locator = page.get_by_role("button", name="Continue")
-        self._cancel_button: Locator = page.get_by_role("button", name="Cancel")
-        self._error_message: Locator = page.locator("[data-test='error']")
-    
-    def verify_checkout_info_page_loaded(self) -> None:
-        """Verify that the checkout info page has loaded successfully."""
-        expect(self._page_title).to_be_visible()
-        expect(self._page_title).to_have_text("Checkout: Your Information")
-        self.wait_for_url(f"{self.base_url}/checkout-step-one.html")
-    
-    def fill_info(self, first_name: str, last_name: str, postal_code: str) -> None:
-        """
-        Fill in checkout information form.
-        
-        Args:
-            first_name: Customer's first name
-            last_name: Customer's last name
-            postal_code: Customer's postal/zip code
-        """
-        expect(self._first_name_input).to_be_visible()
-        self._first_name_input.fill(first_name)
-        self._last_name_input.fill(last_name)
-        self._postal_code_input.fill(postal_code)
-    
-    def continue_to_overview(self) -> None:
-        """Continue to the checkout overview page."""
-        expect(self._continue_button).to_be_enabled()
-        self._continue_button.click()
-        self.wait_for_url(f"{self.base_url}/checkout-step-two.html")
-    
-    def cancel_checkout(self) -> None:
-        """Cancel checkout and return to cart page."""
-        self._cancel_button.click()
-        self.wait_for_url(f"{self.base_url}/cart.html")
-    
-    def get_error_message(self) -> str:
-        """
-        Get the error message displayed on form validation failure.
-        
-        Returns:
-            str: Error message text
-        """
-        expect(self._error_message).to_be_visible()
-        return self._error_message.inner_text()
-    
-    def is_error_displayed(self) -> bool:
-        """
-        Check if error message is displayed.
-        
-        Returns:
-            bool: True if error is visible, False otherwise
-        """
-        return self._error_message.is_visible()
+        self.first_name_input: Locator = page.get_by_test_id("firstName")
+        self.last_name_input: Locator = page.get_by_test_id("lastName")
+        self.postal_code_input: Locator = page.get_by_test_id("postalCode")
+        self.continue_button: Locator = page.get_by_test_id("continue")
+        self.cancel_button: Locator = page.get_by_test_id("cancel")
+        self.error_message: Locator = page.get_by_test_id("error")
+
+    @allure.step("Fill customer info: {first_name} {last_name}, {postal_code}")
+    def fill_info(self, first_name: str, last_name: str, postal_code: str) -> Self:
+        self.first_name_input.fill(first_name)
+        self.last_name_input.fill(last_name)
+        self.postal_code_input.fill(postal_code)
+        return self
+
+    def fill_customer(self, customer: Customer) -> Self:
+        return self.fill_info(customer.first_name, customer.last_name, customer.postal_code)
+
+    def submit(self) -> None:
+        """Click Continue without asserting the outcome (for negative tests)."""
+        self.continue_button.click()
+
+    @allure.step("Continue to overview")
+    def continue_to_overview(self) -> CheckoutOverviewPage:
+        from pages.checkout_overview_page import CheckoutOverviewPage
+
+        self.submit()
+        return CheckoutOverviewPage(self.page).should_be_loaded()
+
+    @allure.step("Cancel checkout")
+    def cancel(self) -> CartPage:
+        from pages.cart_page import CartPage
+
+        self.cancel_button.click()
+        return CartPage(self.page).should_be_loaded()
+
+    def get_field_values(self) -> tuple[str, str, str]:
+        return (
+            self.first_name_input.input_value(),
+            self.last_name_input.input_value(),
+            self.postal_code_input.input_value(),
+        )
+
+    def should_show_error(self, message: str) -> None:
+        expect(self.error_message).to_have_text(message)
