@@ -13,6 +13,8 @@ browser context, so tests start already logged in.
 """
 
 import json
+import platform
+import shutil
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -202,3 +204,25 @@ def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo):
         allure.attach(page.url, name="url-on-failure", attachment_type=allure.attachment_type.URI_LIST)
     except Exception as error:  # reporting must never mask the real failure
         allure.attach(str(error), name="attachment-error", attachment_type=allure.attachment_type.TEXT)
+
+
+def pytest_sessionfinish(session: pytest.Session) -> None:
+    """Add environment info and failure categories to the Allure results (controller process only)."""
+    config = session.config
+    if hasattr(config, "workerinput"):
+        return
+    alluredir = config.getoption("allure_report_dir", default=None)
+    if not alluredir:
+        return
+
+    results = Path(alluredir)
+    results.mkdir(parents=True, exist_ok=True)
+    browsers = config.getoption("browser", default=None) or ["chromium"]
+    environment = {
+        "Base.URL": config.getoption("base_url") or config.getini("base_url"),
+        "Browsers": ", ".join(browsers),
+        "Python": platform.python_version(),
+        "Platform": platform.platform(terse=True),
+    }
+    (results / "environment.properties").write_text("\n".join(f"{key}={value}" for key, value in environment.items()))
+    shutil.copy(Path(__file__).parent / "config" / "allure_categories.json", results / "categories.json")
