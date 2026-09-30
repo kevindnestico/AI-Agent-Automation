@@ -31,6 +31,8 @@ class ProductDetailPage(BasePage):
 
     def should_be_loaded(self) -> Self:
         super().should_be_loaded()
+        # The URL changes before React swaps the view; wait for a detail-only element.
+        expect(self.back_button).to_be_visible()
         expect(self.name).to_be_visible()
         return self
 
