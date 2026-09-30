@@ -47,6 +47,10 @@ jobs:
         run: playwright install --with-deps ${{ matrix.browser }}
 
       - name: Run tests
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Claude root-cause analysis runs only when the secret is configured.
+          AI_FLAG: ${{ secrets.ANTHROPIC_API_KEY != '' && '--ai-analysis' || '' }}
         run: >
           pytest
           --browser ${{ matrix.browser }}
@@ -55,6 +59,7 @@ jobs:
           --tracing retain-on-failure
           --screenshot only-on-failure
           --video retain-on-failure
+          $AI_FLAG
 
       - name: Upload Allure results
         if: always()

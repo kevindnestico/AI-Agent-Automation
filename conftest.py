@@ -12,6 +12,8 @@ resulting cookies are saved with ``storage_state`` and injected into every new
 browser context, so tests start already logged in.
 """
 
+import contextlib
+import inspect
 import json
 import platform
 import shutil
@@ -23,6 +25,7 @@ import allure
 import pytest
 from playwright.sync_api import Browser, Page, Playwright, expect
 
+from ai.failure_analyzer import FailureAnalyzer, FailureContext, analysis_to_json
 from config import settings
 from data.customers import DEFAULT_CUSTOMER
 from data.products import BACKPACK, BIKE_LIGHT, Product
@@ -180,9 +183,75 @@ def _find_page(item: pytest.Item) -> Page | None:
     return None
 
 
+_ANALYZER_KEY = pytest.StashKey[FailureAnalyzer | None]()
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--ai-analysis",
+        action="store_true",
+        default=False,
+        help="Ask Claude for a root-cause analysis of each failed test (needs Anthropic credentials).",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.stash[_ANALYZER_KEY] = FailureAnalyzer() if config.getoption("ai_analysis") else None
+
+
+def _is_final_attempt(item: pytest.Item) -> bool:
+    """False while pytest-rerunfailures still has retries left for this test."""
+    reruns = item.config.getoption("reruns", default=0) or 0
+    return getattr(item, "execution_count", 1) > reruns
+
+
+def _build_failure_context(item: pytest.Item, report: pytest.TestReport, page: Page | None) -> FailureContext:
+    try:
+        source = inspect.getsource(item.function)
+    except (OSError, TypeError):
+        source = "(source not available)"
+    if params := getattr(getattr(item, "callspec", None), "params", None):
+        source = f"# parameters: {params!r}\n{source}"
+
+    url = aria_snapshot = screenshot = None
+    if page is not None and not page.is_closed():
+        url = page.url
+        with contextlib.suppress(Exception):
+            aria_snapshot = page.locator("body").aria_snapshot(timeout=2000)
+        with contextlib.suppress(Exception):
+            screenshot = page.screenshot(type="jpeg", quality=70)
+    return FailureContext(
+        test_id=item.nodeid,
+        test_source=source,
+        error=report.longreprtext,
+        url=url,
+        aria_snapshot=aria_snapshot,
+        screenshot_jpeg=screenshot,
+    )
+
+
+def _attach_ai_analysis(item: pytest.Item, report: pytest.TestReport, page: Page | None) -> None:
+    analyzer = item.config.stash.get(_ANALYZER_KEY, None)
+    if analyzer is None or not analyzer.can_analyze() or not _is_final_attempt(item):
+        return
+
+    with allure.step("AI failure analysis (Claude)"):
+        analysis = analyzer.analyze(_build_failure_context(item, report, page))
+        if analysis is None:
+            reason = analyzer.disabled_reason or "No analysis returned (see logs)"
+            allure.attach(reason, name="ai-analysis-unavailable", attachment_type=allure.attachment_type.TEXT)
+            return
+        allure.attach(
+            analysis.to_markdown(), name="AI root-cause analysis", attachment_type="text/markdown", extension="md"
+        )
+        allure.attach(analysis_to_json(analysis), name="ai-analysis.json", attachment_type=allure.attachment_type.JSON)
+        allure.dynamic.tag(f"ai:{analysis.category}")
+    report.sections.append(("AI root-cause analysis", analysis.to_markdown()))
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo):
-    """Attach a screenshot and the current URL to Allure when a test fails.
+    """On failure: attach screenshot and URL to Allure and, with ``--ai-analysis``, a Claude diagnosis.
 
     Runs during the ``call`` phase, before fixtures are torn down, so the page
     is still open in the state that caused the failure.
@@ -193,17 +262,18 @@ def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo):
         return
 
     page = _find_page(item)
-    if page is None or page.is_closed():
-        return
-    try:
-        allure.attach(
-            page.screenshot(full_page=True),
-            name="screenshot-on-failure",
-            attachment_type=allure.attachment_type.PNG,
-        )
-        allure.attach(page.url, name="url-on-failure", attachment_type=allure.attachment_type.URI_LIST)
-    except Exception as error:  # reporting must never mask the real failure
-        allure.attach(str(error), name="attachment-error", attachment_type=allure.attachment_type.TEXT)
+    if page is not None and not page.is_closed():
+        try:
+            allure.attach(
+                page.screenshot(full_page=True),
+                name="screenshot-on-failure",
+                attachment_type=allure.attachment_type.PNG,
+            )
+            allure.attach(page.url, name="url-on-failure", attachment_type=allure.attachment_type.URI_LIST)
+        except Exception as error:  # reporting must never mask the real failure
+            allure.attach(str(error), name="attachment-error", attachment_type=allure.attachment_type.TEXT)
+
+    _attach_ai_analysis(item, report, page)
 
 
 def pytest_sessionfinish(session: pytest.Session) -> None:
