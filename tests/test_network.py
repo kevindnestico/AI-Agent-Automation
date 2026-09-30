@@ -17,6 +17,16 @@ from pages import InventoryPage, LoginPage
 pytestmark = allure.feature("Network")
 
 
+# Failure texts for requests cancelled by the browser itself, e.g. product images
+# still downloading when the SPA switches view. Not network errors.
+BROWSER_CANCELLATIONS = {
+    "net::ERR_ABORTED",  # Chromium
+    "NS_BINDING_ABORTED",  # Firefox
+    "cancelled",  # WebKit
+    "Load request cancelled",  # WebKit
+}
+
+
 def complete_purchase_through_ui(page: Page) -> None:
     """Full purchase using only clicks (no direct navigation)."""
     inventory = LoginPage(page).open().login_as(User.STANDARD)
@@ -45,7 +55,14 @@ def test_no_console_or_http_errors_during_purchase(page: Page, base_url: str):
         lambda msg: record(msg.location.get("url"), f"console.{msg.type}: {msg.text}") if msg.type == "error" else None,
     )
     page.on("pageerror", lambda error: problems.append(f"uncaught: {error}"))
-    page.on("requestfailed", lambda request: record(request.url, f"failed: {request.url}"))
+    page.on(
+        "requestfailed",
+        lambda request: (
+            None
+            if request.failure in BROWSER_CANCELLATIONS
+            else record(request.url, f"failed ({request.failure}): {request.url}")
+        ),
+    )
     page.on(
         "response",
         lambda response: (
