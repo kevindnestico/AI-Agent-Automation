@@ -1,7 +1,7 @@
 # Saucedemo E2E Automation — Playwright + Python + Claude
 
-[![E2E Tests](https://github.com/kevindnestico/AI-Agent-Automation/actions/workflows/tests.yml/badge.svg)](https://github.com/kevindnestico/AI-Agent-Automation/actions/workflows/tests.yml)
-[![Allure Report](https://img.shields.io/badge/Allure-report-orange?logo=qameta)](https://kevindnestico.github.io/AI-Agent-Automation/)
+[![E2E Tests](https://github.com/kevindnestico/saucedemo-playwright-pytest/actions/workflows/tests.yml/badge.svg)](https://github.com/kevindnestico/saucedemo-playwright-pytest/actions/workflows/tests.yml)
+[![Allure Report](https://img.shields.io/badge/Allure-report-orange?logo=qameta)](https://kevindnestico.github.io/saucedemo-playwright-pytest/)
 ![Python](https://img.shields.io/badge/python-3.11+-blue?logo=python)
 ![Playwright](https://img.shields.io/badge/playwright-1.63-2EAD33?logo=playwright)
 [![Ruff](https://img.shields.io/badge/lint-ruff-D7FF64)](https://docs.astral.sh/ruff/)
@@ -124,7 +124,7 @@ allure serve allure-results
 ```
 
 CI merges the results from all browsers, keeps the trend history and publishes the report to
-**https://kevindnestico.github.io/AI-Agent-Automation/**.
+**https://kevindnestico.github.io/saucedemo-playwright-pytest/**.
 
 ## AI failure analysis with Claude
 

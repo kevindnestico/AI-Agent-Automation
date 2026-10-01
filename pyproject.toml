@@ -1,5 +1,5 @@
 [project]
-name = "saucedemo-automation"
+name = "saucedemo-playwright-pytest"
 version = "2.0.0"
 description = "E2E test automation for Saucedemo with Playwright, pytest, Page Object Model and Claude-powered failure analysis"
 requires-python = ">=3.11"
